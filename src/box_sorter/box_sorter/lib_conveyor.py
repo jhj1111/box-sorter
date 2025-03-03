@@ -52,6 +52,7 @@ def read_status():
                     current_status = "RUN"
 
         time.sleep(0.1)  # CPU 점유율 방지
+        return current_status
 
 def send_command(command, distance=None):
     """JSON 형식으로 명령어를 아두이노에 전송"""
@@ -68,8 +69,13 @@ def send_command(command, distance=None):
     print(f"Sent: {json_data}")
 
 def disconnect_arduino():
+    global running, status_thread
     if ser:
+        running = False
+        if status_thread and status_thread.is_alive():
+            status_thread.join()  # 쓰레드가 종료될 때까지 대기
         ser.close()
+        print("아두이노 연결이 종료되었습니다.")
 
 # 상태 읽기 쓰레드 시작
 if ser:

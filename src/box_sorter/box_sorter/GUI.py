@@ -12,6 +12,7 @@ import threading
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import QTimer
 
 import box_sorter.lib_conveyor as conveyor
 
@@ -47,6 +48,11 @@ class GUI(QMainWindow):
         self.setupUi()
         self.current_status = None
 
+        # QTimer를 사용하여 주기적으로 상태 업데이트
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.read_status)
+        self.timer.start(100)  # 100ms마다 실행
+
     def setupUi(self):
         self.setWindowTitle("Control GUI")
         self.setGeometry(100, 100, 800, 600)
@@ -76,20 +82,15 @@ class GUI(QMainWindow):
 
     def read_status(self):
         """아두이노에서 지속적으로 상태를 읽어 GUI에 출력"""
-        while self.arduino:
-            try:
-                response = self.arduino.read(1).decode().strip()
-                if response == '.' and self.current_status != "READY":
-                    self.textBrowser.append("'conveyor_status': READY")
-                    self.current_status = "READY"
-                elif response == '_' and self.current_status != "RUN":
-                    self.textBrowser.append("'conveyor_status': RUN")
-                    self.current_status = "RUN"
-            except serial.SerialException:
-                self.textBrowser.append("⚠ 시리얼 통신 오류")
-                break
-            except UnicodeDecodeError:
-                continue  # 데이터 오류 시 무시하고 계속 읽기
+        response = conveyor.read_status()
+
+        if response == "READY" and self.current_status != "READY":
+            self.textBrowser.append("'conveyor_status': READY")
+            self.current_status = "READY"
+        elif response == "RUN" and self.current_status != "RUN":
+            self.textBrowser.append("'conveyor_status': RUN")
+            self.current_status = "RUN"
+
 
     def start_action(self):
         """ 시작 버튼 클릭 시 아두이노에 이동 명령 전송 """
