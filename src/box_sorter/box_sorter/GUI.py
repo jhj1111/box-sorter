@@ -157,7 +157,7 @@ class GUI(QMainWindow):
                        QImage.Format_RGB888)
         return image
 
-def start_node(node, gui):
+def start_node(gui):
     #rclpy.init()
 
     node = ImageSubscriber(gui)
@@ -172,10 +172,10 @@ def main(args=None):
     
     gui = GUI()
     gui.show()
-    arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
+    #arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
 
     # ROS 2 노드를 별도의 스레드에서 실행
-    ros2_thread = threading.Thread(target=start_node, args=(arduino_serial_node, gui))
+    ros2_thread = threading.Thread(target=start_node, args=(gui,))
     ros2_thread.start()
 
     # GUI 실행
