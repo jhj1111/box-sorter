@@ -20,9 +20,9 @@ BAUD_RATE = 115200
 os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = "/usr/lib/qt/plugins" #적절한 경로로 수정 필요
 os.environ["QT_QPA_PLATFORM"] = "xcb" #기본 플랫폼 설정(본인이 사용하려는 플랫폼으로 설정)
 
-class ArduinoSerialNode(Node):
+class ImageSubscriber(Node):
     def __init__(self, gui):
-        super().__init__('arduino_serial_node')
+        super().__init__('iamge_subscriber')
         self.gui = gui
         self.subscription_rgb = self.create_subscription(
             CompressedImage,
@@ -139,7 +139,7 @@ class GUI(QMainWindow):
 def start_node(node, gui):
     #rclpy.init()
 
-    node = ArduinoSerialNode(gui)
+    node = ImageSubscriber(gui)
 
     rclpy.spin(node)
     node.destroy_node()
@@ -151,7 +151,7 @@ def main(args=None):
     
     gui = GUI()
     gui.show()
-    arduino_serial_node = ArduinoSerialNode(gui)  # Pass GUI instance to ArduinoSerialNode
+    arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
 
     # ROS 2 노드를 별도의 스레드에서 실행
     ros2_thread = threading.Thread(target=start_node, args=(arduino_serial_node, gui))
