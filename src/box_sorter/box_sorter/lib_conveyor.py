@@ -53,6 +53,7 @@ def read_status():
 
         time.sleep(0.1)  # CPU 점유율 방지
         return current_status
+    return
 
 def send_command(command, distance=None):
     """JSON 형식으로 명령어를 아두이노에 전송"""
@@ -81,6 +82,8 @@ def disconnect_arduino():
 if ser:
     status_thread = threading.Thread(target=read_status, daemon=True)
     status_thread.start()
+else :
+    running = False
 
 
 #ser.close()  # 프로그램 종료 시 포트 닫기
