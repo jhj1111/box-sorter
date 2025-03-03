@@ -1,19 +1,42 @@
 import rclpy
 from rclpy.node import Node
+from sensor_msgs.msg import CompressedImage
 
+import os
+import cv2
 import sys
-import serial
 import time
+import serial
+import imutils
 import threading
-from PySide2.QtWidgets import QApplication, QMainWindow, QTextBrowser, QPushButton, QVBoxLayout, QWidget, QLineEdit
+import numpy as np
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QImage, QPixmap
 
 # 아두이노 시리얼 포트 설정
 SERIAL_PORT = "/dev/ttyACM0"
 BAUD_RATE = 115200
 
+os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = "/usr/lib/qt/plugins" #적절한 경로로 수정 필요
+os.environ["QT_QPA_PLATFORM"] = "xcb" #기본 플랫폼 설정(본인이 사용하려는 플랫폼으로 설정)
+
 class ArduinoSerialNode(Node):
-    def __init__(self):
+    def __init__(self, gui):
         super().__init__('arduino_serial_node')
+        self.gui = gui
+        self.subscription_rgb = self.create_subscription(
+            CompressedImage,
+            'compressed_low',
+            self.image_callback,
+            10)
+        self.image_np = None
+
+    def image_callback(self, msg):
+        print('listener_callback_rgb...')
+        np_arr = np.frombuffer(msg.data, np.uint8)
+        self.image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)  # Decode to color image
+        if self.image_np is not None:
+            self.gui.image_show(self.image_np)
 
 class GUI(QMainWindow):
     def __init__(self):
@@ -25,7 +48,7 @@ class GUI(QMainWindow):
 
     def setupUi(self):
         self.setWindowTitle("Control GUI")
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 800, 600)
 
         self.centralwidget = QWidget(self)
         self.setCentralWidget(self.centralwidget)
@@ -46,6 +69,9 @@ class GUI(QMainWindow):
         self.stop_button = QPushButton("정지", self.centralwidget)
         self.stop_button.clicked.connect(self.stop_action)
         self.layout.addWidget(self.stop_button)
+
+        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
+        self.layout.addWidget(self.label_1)
 
     def connect_serial(self):
         """ 아두이노 시리얼 연결 """
@@ -91,26 +117,40 @@ class GUI(QMainWindow):
             self.textBrowser.append("유효한 숫자를 입력하세요.")
 
     def stop_action(self):
-            """ 정지 버튼 클릭 시 동작 """
-            distance_mm = 1
-            if self.arduino:
-                self.textBrowser.append("정지")
-                self.arduino.write(f"{distance_mm}\n".encode())
+        """ 정지 버튼 클릭 시 동작 """
+        distance_mm = 1
+        if self.arduino:
+            self.textBrowser.append("정지")
+            self.arduino.write(f"{distance_mm}\n".encode())
+
+    def image_show(self, image_np):
+        image = self.cvimage_to_label(image_np)
+        self.label_1.setPixmap(QPixmap.fromImage(image))
+
+    def cvimage_to_label(self, image):
+        image = imutils.resize(image, width=640)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = QImage(image,
+                       image.shape[1],
+                       image.shape[0],
+                       QImage.Format_RGB888)
+        return image
 
 def main(args=None):
     rclpy.init(args=args)
-    arduino_serial_node = ArduinoSerialNode()
-
     app = QApplication(sys.argv)
+    
     gui = GUI()
+    arduino_serial_node = ArduinoSerialNode(gui)  # Pass GUI instance to ArduinoSerialNode
+
     gui.show()
 
     try:
+        rclpy.spin(arduino_serial_node)  # Keep the ROS2 node running
         sys.exit(app.exec_())
     except KeyboardInterrupt:
         pass
     finally:
-        arduino_serial_node.close_serial()
         arduino_serial_node.destroy_node()
         rclpy.shutdown()
 
