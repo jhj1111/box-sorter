@@ -136,23 +136,33 @@ class GUI(QMainWindow):
                        QImage.Format_RGB888)
         return image
 
+def start_node(node, gui):
+    #rclpy.init()
+
+    node = ArduinoSerialNode(gui)
+
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
 def main(args=None):
     rclpy.init(args=args)
     app = QApplication(sys.argv)
     
     gui = GUI()
+    gui.show()
     arduino_serial_node = ArduinoSerialNode(gui)  # Pass GUI instance to ArduinoSerialNode
 
-    gui.show()
+    # ROS 2 노드를 별도의 스레드에서 실행
+    ros2_thread = threading.Thread(target=start_node, args=(arduino_serial_node, gui))
+    ros2_thread.start()
 
-    try:
-        rclpy.spin(arduino_serial_node)  # Keep the ROS2 node running
-        sys.exit(app.exec_())
-    except KeyboardInterrupt:
-        pass
-    finally:
-        arduino_serial_node.destroy_node()
-        rclpy.shutdown()
+    # GUI 실행
+    sys.exit(app.exec_())
+
+    arduino_serial_node.destroy_node()
+    rclpy.shutdown()
+    ros2_thread.join()
 
 if __name__ == "__main__":
     main()
