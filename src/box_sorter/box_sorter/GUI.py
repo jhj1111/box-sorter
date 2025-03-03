@@ -13,6 +13,8 @@ import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QImage, QPixmap
 
+import box_sorter.lib_conveyor as conveyor
+
 # 아두이노 시리얼 포트 설정
 SERIAL_PORT = "/dev/ttyACM0"
 BAUD_RATE = 115200
@@ -43,7 +45,6 @@ class GUI(QMainWindow):
         super().__init__()
         self.arduino = None  # 시리얼 객체 초기화
         self.setupUi()
-        self.connect_serial()
         self.current_status = None
 
     def setupUi(self):
@@ -73,19 +74,6 @@ class GUI(QMainWindow):
         self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
         self.layout.addWidget(self.label_1)
 
-    def connect_serial(self):
-        """ 아두이노 시리얼 연결 """
-        try:
-            self.arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            time.sleep(2)  # 연결 안정화 대기
-            self.textBrowser.append("Arduino 연결 성공")
-
-            # 상태 읽기 쓰레드 실행
-            status_thread = threading.Thread(target=self.read_status, daemon=True)
-            status_thread.start()
-        except serial.SerialException:
-            self.textBrowser.append("시리얼 포트를 찾을 수 없습니다. 포트 설정을 확인하세요.")
-
     def read_status(self):
         """아두이노에서 지속적으로 상태를 읽어 GUI에 출력"""
         while self.arduino:
@@ -105,12 +93,14 @@ class GUI(QMainWindow):
 
     def start_action(self):
         """ 시작 버튼 클릭 시 아두이노에 이동 명령 전송 """
+        command = 'go'
         distance_text = self.distance_input.text()
         try:
             distance_mm = float(distance_text)
             if self.arduino:
                 self.textBrowser.append(f"{distance_mm} 이동 요청")
-                self.arduino.write(f"{distance_mm}\n".encode())
+                conveyor.send_command(command, distance_mm)
+                #self.arduino.write(f"{distance_mm}\n".encode())
             else:
                 self.textBrowser.append("Arduino 연결 없음")
         except ValueError:
@@ -118,10 +108,12 @@ class GUI(QMainWindow):
 
     def stop_action(self):
         """ 정지 버튼 클릭 시 동작 """
+        command = 'stop'
         distance_mm = 1
         if self.arduino:
             self.textBrowser.append("정지")
-            self.arduino.write(f"{distance_mm}\n".encode())
+            conveyor.send_command(command)
+            #self.arduino.write(f"{distance_mm}\n".encode())
 
     def image_show(self, image_np):
         image = self.cvimage_to_label(image_np)
@@ -136,7 +128,7 @@ class GUI(QMainWindow):
                        QImage.Format_RGB888)
         return image
 
-def start_node(node, gui):
+def start_node(gui):
     #rclpy.init()
 
     node = ImageSubscriber(gui)
@@ -151,15 +143,17 @@ def main(args=None):
     
     gui = GUI()
     gui.show()
-    arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
+    #arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
 
     # ROS 2 노드를 별도의 스레드에서 실행
-    ros2_thread = threading.Thread(target=start_node, args=(arduino_serial_node, gui))
+    ros2_thread = threading.Thread(target=start_node, args=(gui,))
     ros2_thread.start()
 
     # GUI 실행
     sys.exit(app.exec_())
 
+    # 종료
+    conveyor.disconnect_arduino()
     arduino_serial_node.destroy_node()
     rclpy.shutdown()
     ros2_thread.join()
