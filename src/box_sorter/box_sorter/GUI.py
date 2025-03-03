@@ -70,6 +70,22 @@ class GUI(QMainWindow):
         self.stop_button.clicked.connect(self.stop_action)
         self.layout.addWidget(self.stop_button)
 
+        self.job_layout = QHBoxLayout()
+
+        self.job_combo = QComboBox(self.centralwidget)
+        self.job_combo.addItems([
+            "Job1: red*2, blue*1, goto goal 1",
+            "Job2: red*1, blue*2, goto goal 2",
+            "Job3: red*1, goto goal 3"
+        ])
+        self.job_layout.addWidget(self.job_combo)
+
+        self.send_button = QPushButton("Send", self.centralwidget)
+        self.send_button.clicked.connect(self.send_job)
+        self.job_layout.addWidget(self.send_button)
+
+        self.layout.addLayout(self.job_layout)
+
         self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
         self.layout.addWidget(self.label_1)
 
@@ -122,6 +138,11 @@ class GUI(QMainWindow):
         if self.arduino:
             self.textBrowser.append("정지")
             self.arduino.write(f"{distance_mm}\n".encode())
+
+    def send_job(self):
+        """ Job 선택 """
+        selected_job = self.job_combo.currentText()
+        self.textBrowser.append(f"Job 전송: {selected_job}")
 
     def image_show(self, image_np):
         image = self.cvimage_to_label(image_np)
