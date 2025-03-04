@@ -117,7 +117,7 @@ class GUI(QMainWindow):
         command = 'go'
         distance_text = self.distance_input.text()
         try:
-            distance_mm = float(distance_text)
+            distance_mm = float(distance_text) * 10.24
             if self.arduino:
                 self.textBrowser.append(f"{distance_mm} 이동 요청")
                 conveyor.send_command(command, distance_mm)

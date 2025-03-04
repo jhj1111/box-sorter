@@ -48,7 +48,7 @@ class WindowClass(QMainWindow, form_class):
 	def button1Function(self):
 		print("btn_1 clicked")
         
-		img_path = 'yolo_imgs_arco/saved_image_%03d.jpg' % self.file_idx
+		img_path = 'dis/saved_image_%03d.jpg' % self.file_idx
 		cv2.imwrite(img_path, self.frame)
 
 		self.file_idx += 1
