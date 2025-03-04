@@ -91,6 +91,9 @@ class GUI(QMainWindow):
 
         # 전체 레이아웃에 추가
         self.layout.addLayout(self.control_layout)
+        
+        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
+        self.layout.addWidget(self.label_1)
 
     def connect_serial(self):
         """ 아두이노 시리얼 연결 """

@@ -51,7 +51,7 @@ def read_status():
                     print("'conveyor/status': RUN")
                     current_status = "RUN"
 
-        time.sleep(0.1)  # CPU 점유율 방지
+        #time.sleep(0.1)  # CPU 점유율 방지
         return current_status
     return
 
@@ -65,6 +65,11 @@ def send_command(command, distance=None):
     elif distance is not None:
         data["distance.mm"] = distance  # 'go' 명령어일 경우 거리 추가
 
+    # if command =='stop' or command == 'go' :
+    #     distance = distance if command == 'go' else 1
+    #     ser.write(f"{distance}\n".encode())
+    #     print(f"Sent: {distance}mm")
+    # else :
     json_data = json.dumps(data)  # JSON 문자열 변환
     ser.write(f"{json_data}\n".encode())  # 아두이노로 전송
     print(f"Sent: {json_data}")
