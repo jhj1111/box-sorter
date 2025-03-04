@@ -12,6 +12,9 @@ import threading
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import QTimer
+
+import box_sorter.lib_conveyor as conveyor
 
 # 아두이노 시리얼 포트 설정
 SERIAL_PORT = "/dev/ttyACM0"
@@ -41,10 +44,14 @@ class ImageSubscriber(Node):
 class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.arduino = None  # 시리얼 객체 초기화
+        self.arduino = conveyor.running  # 시리얼 객체 초기화
         self.setupUi()
-        self.connect_serial()
         self.current_status = None
+
+        # QTimer를 사용하여 주기적으로 상태 업데이트
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.read_status)
+        self.timer.start(100)  # 100ms마다 실행
 
     def setupUi(self):
         self.setWindowTitle("Control GUI")
@@ -89,44 +96,32 @@ class GUI(QMainWindow):
         self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
         self.layout.addWidget(self.label_1)
 
-    def connect_serial(self):
-        """ 아두이노 시리얼 연결 """
-        try:
-            self.arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            time.sleep(2)  # 연결 안정화 대기
-            self.textBrowser.append("Arduino 연결 성공")
-
-            # 상태 읽기 쓰레드 실행
-            status_thread = threading.Thread(target=self.read_status, daemon=True)
-            status_thread.start()
-        except serial.SerialException:
-            self.textBrowser.append("시리얼 포트를 찾을 수 없습니다. 포트 설정을 확인하세요.")
-
     def read_status(self):
         """아두이노에서 지속적으로 상태를 읽어 GUI에 출력"""
-        while self.arduino:
-            try:
-                response = self.arduino.read(1).decode().strip()
-                if response == '.' and self.current_status != "READY":
-                    self.textBrowser.append("'conveyor_status': READY")
-                    self.current_status = "READY"
-                elif response == '_' and self.current_status != "RUN":
-                    self.textBrowser.append("'conveyor_status': RUN")
-                    self.current_status = "RUN"
-            except serial.SerialException:
-                self.textBrowser.append("⚠ 시리얼 통신 오류")
-                break
-            except UnicodeDecodeError:
-                continue  # 데이터 오류 시 무시하고 계속 읽기
+        response = conveyor.read_status()
+
+        # if response == "READY" and self.current_status != "READY":
+        #     self.textBrowser.append("'conveyor_status': READY")
+        #     self.current_status = "READY"
+        # elif response == "RUN" and self.current_status != "RUN":
+        #     self.textBrowser.append("'conveyor_status': RUN")
+        #     self.current_status = "RUN"
+
+        if response != self.current_status:
+            self.textBrowser.append(f"'conveyor_status': {response}")
+            self.current_status = response
+
 
     def start_action(self):
         """ 시작 버튼 클릭 시 아두이노에 이동 명령 전송 """
+        command = 'go'
         distance_text = self.distance_input.text()
         try:
             distance_mm = float(distance_text)
             if self.arduino:
                 self.textBrowser.append(f"{distance_mm} 이동 요청")
-                self.arduino.write(f"{distance_mm}\n".encode())
+                conveyor.send_command(command, distance_mm)
+                #self.arduino.write(f"{distance_mm}\n".encode())
             else:
                 self.textBrowser.append("Arduino 연결 없음")
         except ValueError:
@@ -134,10 +129,12 @@ class GUI(QMainWindow):
 
     def stop_action(self):
         """ 정지 버튼 클릭 시 동작 """
+        command = 'stop'
         distance_mm = 1
         if self.arduino:
             self.textBrowser.append("정지")
-            self.arduino.write(f"{distance_mm}\n".encode())
+            conveyor.send_command(command)
+            #self.arduino.write(f"{distance_mm}\n".encode())
 
     def send_job(self):
         """ Job 선택 """
@@ -181,6 +178,8 @@ def main(args=None):
     # GUI 실행
     sys.exit(app.exec_())
 
+    # 종료
+    conveyor.disconnect_arduino()
     arduino_serial_node.destroy_node()
     rclpy.shutdown()
     ros2_thread.join()
