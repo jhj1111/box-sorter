@@ -6,6 +6,7 @@ import os
 import cv2
 import sys
 import time
+import json
 import serial
 import imutils
 import threading
@@ -70,25 +71,61 @@ class GUI(QMainWindow):
         self.stop_button.clicked.connect(self.stop_action)
         self.layout.addWidget(self.stop_button)
 
-        self.job_layout = QHBoxLayout()
-
-        self.job_combo = QComboBox(self.centralwidget)
-        self.job_combo.addItems([
-            "Job1: red*2, blue*1, goto goal 1",
-            "Job2: red*1, blue*2, goto goal 2",
-            "Job3: red*1, goto goal 3"
+        self.parts_layout = QHBoxLayout()
+        
+        self.parts_combo = QComboBox(self.centralwidget)
+        self.parts_combo.addItems([
+            "Parts: Red",
+            "Parts: Blue"
         ])
-        self.job_layout.addWidget(self.job_combo)
+        self.parts_layout.addWidget(self.parts_combo)
 
         self.send_button = QPushButton("Send", self.centralwidget)
         self.send_button.clicked.connect(self.send_job)
-        self.job_layout.addWidget(self.send_button)
+        self.parts_layout.addWidget(self.send_button)
 
-        self.layout.addLayout(self.job_layout)
+        self.layout.addLayout(self.parts_layout)
 
         self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
         self.layout.addWidget(self.label_1)
 
+        self.count_layout = QHBoxLayout()
+        
+        self.count_combo = QComboBox(self.centralwidget)
+        self.count_combo.addItems([
+            "Count: 1",
+            "Count: 2"
+        ])
+        self.count_layout.addWidget(self.count_combo)
+
+        self.send_button = QPushButton("Send", self.centralwidget)
+        self.send_button.clicked.connect(self.send_job)
+        self.count_layout.addWidget(self.send_button)
+
+        self.layout.addLayout(self.count_layout)
+
+        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
+        self.layout.addWidget(self.label_1)
+
+        self.goal_layout = QHBoxLayout()
+        
+        self.goal_combo = QComboBox(self.centralwidget)
+        self.goal_combo.addItems([
+            "Goal: 1",
+            "Goal: 2",
+            "Goal: 3"
+        ])
+        self.goal_layout.addWidget(self.goal_combo)
+
+        self.send_button = QPushButton("Send", self.centralwidget)
+        self.send_button.clicked.connect(self.send_job)
+        self.goal_layout.addWidget(self.send_button)
+
+        self.layout.addLayout(self.goal_layout)
+
+        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
+        self.layout.addWidget(self.label_1)
+        
     def connect_serial(self):
         """ 아두이노 시리얼 연결 """
         try:
@@ -157,7 +194,7 @@ class GUI(QMainWindow):
                        QImage.Format_RGB888)
         return image
 
-def start_node(node, gui):
+def start_node(gui):
     #rclpy.init()
 
     node = ImageSubscriber(gui)
@@ -169,13 +206,13 @@ def start_node(node, gui):
 def main(args=None):
     rclpy.init(args=args)
     app = QApplication(sys.argv)
-
+    
     gui = GUI()
     gui.show()
-    arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
+    #arduino_serial_node = ImageSubscriber(gui)  # Pass GUI instance to ArduinoSerialNode
 
     # ROS 2 노드를 별도의 스레드에서 실행
-    ros2_thread = threading.Thread(target=start_node, args=(arduino_serial_node, gui))
+    ros2_thread = threading.Thread(target=start_node, args=(gui,))
     ros2_thread.start()
 
     # GUI 실행
