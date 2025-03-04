@@ -1,0 +1,4 @@
+aruco
+blue
+box
+red
