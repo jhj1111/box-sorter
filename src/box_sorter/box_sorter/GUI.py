@@ -27,7 +27,7 @@ class ImageSubscriber(Node):
         self.gui = gui
         self.subscription_rgb = self.create_subscription(
             CompressedImage,
-            'compressed_low',
+            'yolo/compressed',
             self.image_callback,
             10)
         self.image_np = None
@@ -91,7 +91,7 @@ class GUI(QMainWindow):
 
         # 전체 레이아웃에 추가
         self.layout.addLayout(self.control_layout)
-        
+
         self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
         self.layout.addWidget(self.label_1)
 
