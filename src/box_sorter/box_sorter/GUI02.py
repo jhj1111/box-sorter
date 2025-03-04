@@ -29,7 +29,7 @@ class ImageSubscriber(Node):
         self.gui = gui
         self.subscription_rgb = self.create_subscription(
             CompressedImage,
-            'compressed_low',
+            'yolo/compressed',
             self.image_callback,
             10)
         self.image_np = None
