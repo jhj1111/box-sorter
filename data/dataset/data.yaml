@@ -1,0 +1,9 @@
+names:
+- aruco
+- blue
+- box
+- red
+nc: 4
+test: /content/data/dataset/test/images
+train: /content/data/dataset/train/images
+val: /content/data/dataset/valid/images
