@@ -13,7 +13,7 @@ try:
     ser = serial.Serial(arduino_port, baud_rate, timeout=1)
     time.sleep(2)  # 아두이노가 시리얼 통신을 초기화할 시간을 줌
     print("아두이노와 연결되었습니다.")
-    ser = True
+    #ser = True
 
 except serial.SerialException:
     print(f"오류: {arduino_port} 포트에 연결할 수 없습니다. 포트가 올바른지 확인하세요.")

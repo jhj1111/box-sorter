@@ -84,12 +84,16 @@ class GUI(QMainWindow):
         """아두이노에서 지속적으로 상태를 읽어 GUI에 출력"""
         response = conveyor.read_status()
 
-        if response == "READY" and self.current_status != "READY":
-            self.textBrowser.append("'conveyor_status': READY")
-            self.current_status = "READY"
-        elif response == "RUN" and self.current_status != "RUN":
-            self.textBrowser.append("'conveyor_status': RUN")
-            self.current_status = "RUN"
+        # if response == "READY" and self.current_status != "READY":
+        #     self.textBrowser.append("'conveyor_status': READY")
+        #     self.current_status = "READY"
+        # elif response == "RUN" and self.current_status != "RUN":
+        #     self.textBrowser.append("'conveyor_status': RUN")
+        #     self.current_status = "RUN"
+
+        if response != self.current_status:
+            self.textBrowser.append(f"'conveyor_status': {response}")
+            self.current_status = response
 
 
     def start_action(self):
