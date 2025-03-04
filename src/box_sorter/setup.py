@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'GUI = box_sorter.GUI:main',
+            'GUI02 = box_sorter.GUI02:main',
             'img_publisher = box_sorter.img_publisher:main',
             #'img_sub_GUI = box_sorter.img_sub_GUI:main',
         ],
