@@ -17,10 +17,10 @@ class YOLOPublisher(Node):
         self.iamge_subscriber
 
         # YOLO 모델 로드
-        # config_dir = os.path.join(get_package_share_directory('box_sorter'), 'config')
-        # yolo_file = os.path.join(config_dir, 'best.pt')
-        self.yolo_model = YOLO("runs/detect/yolov8_train/weights/best.pt")
-        # self.yolo_model = YOLO(yolo_file)
+        config_dir = os.path.join(get_package_share_directory('box_sorter'), 'config')
+        yolo_file = os.path.join(config_dir, 'best.pt')
+        # self.yolo_model = YOLO("runs/detect/yolov8_train/weights/best.pt")
+        self.yolo_model = YOLO(yolo_file)
 
     def image_callback(self, msg):
         np_arr = np.frombuffer(msg.data, np.uint8)

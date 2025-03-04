@@ -180,7 +180,6 @@ def main(args=None):
 
     # 종료
     conveyor.disconnect_arduino()
-    arduino_serial_node.destroy_node()
     rclpy.shutdown()
     ros2_thread.join()
 

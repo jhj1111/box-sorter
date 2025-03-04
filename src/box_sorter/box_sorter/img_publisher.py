@@ -3,15 +3,15 @@ from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge
 from ultralytics import YOLO
-import cv2
+import cv2, sys
 
 class CameraPublisher(Node):
-    def __init__(self):
+    def __init__(self, cam):
         super().__init__('camera_publisher')
         self.publisher_ = self.create_publisher(CompressedImage, 'image_raw/compressed', 10)
         self.timer = self.create_timer(0.2, self.timer_callback)  # 10 Hz
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture(2)
+        self.cap = cv2.VideoCapture(int(cam))
         self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
         self.cap.set(cv2.CAP_PROP_FPS, 5)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -48,7 +48,12 @@ class CameraPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = CameraPublisher()
+
+    if len(sys.argv) < 2:
+        cam = '2'
+    else : cam = sys.argv[1]
+
+    node = CameraPublisher(cam)
     rclpy.spin(node)
 
     # 종료 시 자원 정리

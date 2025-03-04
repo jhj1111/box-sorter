@@ -30,6 +30,7 @@ setup(
             'yolo_publisher02 = box_sorter.yolo_publisher02:main',
             'job_publisher = box_sorter.GUI_uuuj:main',
             'yolo_info_subscriber = box_sorter.yolo_info_subscriber:main',
+            'conveyor = box_sorter.conveyor:main',
             #'img_sub_GUI = box_sorter.img_sub_GUI:main',
         ],
     },

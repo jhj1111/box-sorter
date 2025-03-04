@@ -21,7 +21,7 @@ dist = np.array([[ 2.87362321e-02,  1.17548402e-01, -1.08876899e-05,
 
 package_share_directory = get_package_share_directory('box_sorter')
 model_path = os.path.join(package_share_directory, 'config', 'best.pt')
-model_path = "runs/detect/yolov8_train/weights/best.pt"
+#model_path = "runs/detect/yolov8_train/weights/best.pt"
 
 print(f"Model path: {model_path}")
 

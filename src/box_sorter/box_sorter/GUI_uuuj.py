@@ -21,6 +21,8 @@ from PyQt5.QtWidgets import (
     QLabel, QTextBrowser, QLineEdit, QRadioButton, QButtonGroup, QGroupBox
 )
 
+import box_sorter.lib as lib
+
 # 아두이노 시리얼 포트 설정
 SERIAL_PORT = "/dev/ttyACM0"
 BAUD_RATE = 115200
@@ -45,32 +47,35 @@ class JobPublisher(Node):
         self.publisher_.publish(msg)
         self.get_logger().info(f"Published Job: {job_data}")
 
-class ImageSubscriber(Node):
-    def __init__(self, gui):
-        super().__init__('image_subscriber')
-        self.gui = gui
-        self.subscription_rgb = self.create_subscription(
+class GUI(QMainWindow):
+    def __init__(self, job_publisher):
+        super().__init__()
+        self.arduino = None  # 시리얼 객체 초기화
+        self.setupUi()
+        self.current_status = None
+        self.image_np = None
+        self.node = job_publisher
+
+        self.subscription_rgb = self.node.create_subscription(
             CompressedImage,
             'yolo/compressed',
             self.image_callback,
             10)
-        self.image_np = None
+        
+        self.subscription_status = self.node.create_subscription(
+            String,
+            'conveyor/status',
+            self.read_status,
+            10)
+        
+        self.conveyor_publisher_ = self.node.create_publisher(String, 'conveyor/command', 10)
 
     def image_callback(self, msg):
         print('listener_callback_rgb...')
         np_arr = np.frombuffer(msg.data, np.uint8)
         self.image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)  # Decode to color image
         if self.image_np is not None:
-            self.gui.image_show(self.image_np)
-
-class GUI(QMainWindow):
-    def __init__(self, job_publisher):
-        super().__init__()
-        self.arduino = None  # 시리얼 객체 초기화
-        self.setupUi()
-        self.connect_serial()
-        self.current_status = None
-        self.ros_publisher = job_publisher
+            self.image_show(self.image_np)
 
     def setupUi(self):
         self.setWindowTitle("Control GUI")
@@ -180,44 +185,25 @@ class GUI(QMainWindow):
 
         self.setLayout(self.layout)
 
-    def connect_serial(self):
-        """ 아두이노 시리얼 연결 """
-        try:
-            self.arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            time.sleep(2)  # 연결 안정화 대기
-            self.textBrowser.append("Arduino 연결 성공")
-
-            # 상태 읽기 쓰레드 실행
-            status_thread = threading.Thread(target=self.read_status, daemon=True)
-            status_thread.start()
-        except serial.SerialException:
-            self.textBrowser.append("시리얼 포트를 찾을 수 없습니다. 포트 설정을 확인하세요.")
-
-    def read_status(self):
+    def read_status(self, msg):
         """아두이노에서 지속적으로 상태를 읽어 GUI에 출력"""
-        while self.arduino:
-            try:
-                response = self.arduino.read(1).decode().strip()
-                if response == '.' and self.current_status != "READY":
-                    self.textBrowser.append("'conveyor_status': READY")
-                    self.current_status = "READY"
-                elif response == '_' and self.current_status != "RUN":
-                    self.textBrowser.append("'conveyor_status': RUN")
-                    self.current_status = "RUN"
-            except serial.SerialException:
-                self.textBrowser.append("⚠ 시리얼 통신 오류")
-                break
-            except UnicodeDecodeError:
-                continue  # 데이터 오류 시 무시하고 계속 읽기
+        response = msg.data
+
+        if response != self.current_status:
+            self.textBrowser.append(f"'conveyor_status': {response}")
+            self.current_status = response
+
 
     def start_action(self):
         """ 시작 버튼 클릭 시 아두이노에 이동 명령 전송 """
+        command = 'go'
         distance_text = self.distance_input.text()
         try:
-            distance_mm = float(distance_text) * 10.24
+            distance_mm = float(distance_text)
             if self.arduino:
                 self.textBrowser.append(f"{distance_mm} 이동 요청")
-                self.arduino.write(f"{distance_mm}\n".encode())
+                json_data = lib.create_json_msg(['command', 'distance'], [command, distance_mm])
+                self.conveyor_publisher_.publish(json_data)
             else:
                 self.textBrowser.append("Arduino 연결 없음")
         except ValueError:
@@ -225,10 +211,18 @@ class GUI(QMainWindow):
 
     def stop_action(self):
         """ 정지 버튼 클릭 시 동작 """
+        command = 'stop'
         distance_mm = 1
         if self.arduino:
             self.textBrowser.append("정지")
-            self.arduino.write(f"{distance_mm}\n".encode())
+            json_data = lib.create_json_msg(['command'], [command])
+            self.conveyor_publisher_.publish(json_data)
+            #self.arduino.write(f"{distance_mm}\n".encode())
+
+    def send_job(self):
+        """ Job 선택 """
+        selected_job = self.job_combo.currentText()
+        self.textBrowser.append(f"Job 전송: {selected_job}")
 
     def send_job(self):
         """Red & Blue 개수와 Goal을 선택 후 한 번에 Send 실행"""
@@ -237,7 +231,7 @@ class GUI(QMainWindow):
         selected_goal = next(btn.text() for btn in self.goal_button_group.buttons() if btn.isChecked())
 
         # ROS 2 메시지 전송
-        self.ros_publisher.send_json_job(selected_red_count, selected_blue_count, selected_goal)
+        self.node.send_json_job(selected_red_count, selected_blue_count, selected_goal)
         
         # 결과 출력
         self.textBrowser.append(f"Red: {selected_red_count}, Blue: {selected_blue_count}, {selected_goal}")
@@ -255,52 +249,36 @@ class GUI(QMainWindow):
                        QImage.Format_RGB888)
         return image
 
-# def start_node(gui):
-#     #rclpy.init()
+def start_node(node):
+    #rclpy.init()
 
-#     node = ImageSubscriber(gui)
-
-#     rclpy.spin(node)
-#     node.destroy_node()
-#     rclpy.shutdown()
-
-def start_ros_nodes(gui):
-    """ MultiThreadedExecutor를 사용해 JobPublisher와 ImageSubscriber를 단일 스레드에서 실행 """
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
     
-    rclpy.init()  # ✅ ROS 2 초기화 (한 번만 실행)
-    
-    job_publisher = JobPublisher()
-    image_subscriber = ImageSubscriber(gui)
-    
-    executor = MultiThreadedExecutor()
-    executor.add_node(job_publisher)
-    executor.add_node(image_subscriber)
-    
-    ros_thread = threading.Thread(target=executor.spin, daemon=True)
-    ros_thread.start()
-
-    return job_publisher, image_subscriber, executor
-    
-def main():
+def main(args=None):
     """ GUI + ROS 2 노드 실행 """
+
+    rclpy.init(args=args)
     
     app = QApplication(sys.argv)
 
-    # ROS 2 노드 실행 (별도 스레드에서 실행)
-    job_publisher, image_subscriber, executor = start_ros_nodes(None)  
+    job_publisher = JobPublisher()
 
     # Qt GUI 실행
     gui = GUI(job_publisher)
     gui.show()
 
+     # ROS 2 노드를 별도의 스레드에서 실행
+    ros2_thread = threading.Thread(target=start_node, args=(job_publisher,))
+    ros2_thread.start() 
+
     # GUI 실행 (여기서 프로그램이 멈춰 있음)
     app.exec_()
 
     # GUI가 종료되면 ROS 2 노드 정리
-    job_publisher.destroy_node()
-    image_subscriber.destroy_node()
-    executor.shutdown()
     rclpy.shutdown()
+    ros2_thread.join()
 
 if __name__ == "__main__":
     main()
