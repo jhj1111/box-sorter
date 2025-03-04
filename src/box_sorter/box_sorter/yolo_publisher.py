@@ -37,8 +37,9 @@ class YOLOPublisher(Node):
         results = self.yolo_model.predict(dst, conf=0.5)
         dst = results[0].plot()
 
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]  # 90은 압축 품질
-        _, compressed_image = cv2.imencode('.jpg', dst, encode_param)
+        new_dst = cv2.resize(dst, (640, 360))
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 30]  # 30은 압축 품질
+        _, compressed_image = cv2.imencode('.jpg', new_dst, encode_param)
 
         msg = CompressedImage()
         msg.header.stamp = self.get_clock().now().to_msg()  # 타임스탬프 추가
