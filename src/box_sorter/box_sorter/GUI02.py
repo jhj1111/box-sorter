@@ -25,7 +25,7 @@ os.environ["QT_QPA_PLATFORM"] = "xcb" #기본 플랫폼 설정(본인이 사용�
 
 class ImageSubscriber(Node):
     def __init__(self, gui):
-        super().__init__('iamge_subscriber')
+        super().__init__('image_subscriber')
         self.gui = gui
         self.subscription_rgb = self.create_subscription(
             CompressedImage,
