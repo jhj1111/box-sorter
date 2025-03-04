@@ -1,4 +1,0 @@
-aruco
-blue
-box
-red
