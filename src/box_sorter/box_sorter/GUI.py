@@ -44,7 +44,7 @@ class ImageSubscriber(Node):
 class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.arduino = None  # 시리얼 객체 초기화
+        self.arduino = conveyor.running  # 시리얼 객체 초기화
         self.setupUi()
         self.current_status = None
 
