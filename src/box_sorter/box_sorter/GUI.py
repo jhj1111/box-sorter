@@ -71,61 +71,27 @@ class GUI(QMainWindow):
         self.stop_button.clicked.connect(self.stop_action)
         self.layout.addWidget(self.stop_button)
 
-        self.parts_layout = QHBoxLayout()
-        
+        self.control_layout = QHBoxLayout()
+
         self.parts_combo = QComboBox(self.centralwidget)
-        self.parts_combo.addItems([
-            "Parts: Red",
-            "Parts: Blue"
-        ])
-        self.parts_layout.addWidget(self.parts_combo)
+        self.parts_combo.addItems(["Red", "Blue"])
+        self.control_layout.addWidget(self.parts_combo)
 
-        self.send_button = QPushButton("Send", self.centralwidget)
-        self.send_button.clicked.connect(self.send_job)
-        self.parts_layout.addWidget(self.send_button)
-
-        self.layout.addLayout(self.parts_layout)
-
-        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
-        self.layout.addWidget(self.label_1)
-
-        self.count_layout = QHBoxLayout()
-        
         self.count_combo = QComboBox(self.centralwidget)
-        self.count_combo.addItems([
-            "Count: 1",
-            "Count: 2"
-        ])
-        self.count_layout.addWidget(self.count_combo)
+        self.count_combo.addItems(["1", "2"])
+        self.control_layout.addWidget(self.count_combo)
 
-        self.send_button = QPushButton("Send", self.centralwidget)
-        self.send_button.clicked.connect(self.send_job)
-        self.count_layout.addWidget(self.send_button)
-
-        self.layout.addLayout(self.count_layout)
-
-        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
-        self.layout.addWidget(self.label_1)
-
-        self.goal_layout = QHBoxLayout()
-        
         self.goal_combo = QComboBox(self.centralwidget)
-        self.goal_combo.addItems([
-            "Goal: 1",
-            "Goal: 2",
-            "Goal: 3"
-        ])
-        self.goal_layout.addWidget(self.goal_combo)
+        self.goal_combo.addItems(["1", "2", "3"])
+        self.control_layout.addWidget(self.goal_combo)
 
         self.send_button = QPushButton("Send", self.centralwidget)
         self.send_button.clicked.connect(self.send_job)
-        self.goal_layout.addWidget(self.send_button)
+        self.control_layout.addWidget(self.send_button)
 
-        self.layout.addLayout(self.goal_layout)
+        # 전체 레이아웃에 추가
+        self.layout.addLayout(self.control_layout)
 
-        self.label_1 = QLabel(self.centralwidget)  # QLabel for displaying the image
-        self.layout.addWidget(self.label_1)
-        
     def connect_serial(self):
         """ 아두이노 시리얼 연결 """
         try:
@@ -177,9 +143,11 @@ class GUI(QMainWindow):
             self.arduino.write(f"{distance_mm}\n".encode())
 
     def send_job(self):
-        """ Job 선택 """
-        selected_job = self.job_combo.currentText()
-        self.textBrowser.append(f"Job 전송: {selected_job}")
+        selected_part = self.parts_combo.currentText()
+        selected_count = self.count_combo.currentText()
+        selected_goal = self.goal_combo.currentText()
+
+        self.textBrowser.append(f"Selected Part: {selected_part}, Count: {selected_count}, Goal: {selected_goal}")
 
     def image_show(self, image_np):
         image = self.cvimage_to_label(image_np)
