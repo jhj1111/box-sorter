@@ -4,5 +4,5 @@ build
 log
 .vscode
 **/__pycache__/
-images
+./images
 sample_imgs
