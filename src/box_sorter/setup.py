@@ -33,6 +33,7 @@ setup(
             'conveyor = box_sorter.conveyor:main',
             'simple_manager_node = box_sorter.simple_manager_node:main',
             'task_7_red_blue = box_sorter.task_7_red_blue:main',
+            'aruco_move = box_sorter.aruco_move_w_camera_home:main'
             #'img_sub_GUI = box_sorter.img_sub_GUI:main',
         ],
     },
