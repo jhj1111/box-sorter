@@ -5,7 +5,7 @@ from std_msgs.msg import String
 import ast
 from geometry_msgs.msg import Pose, PoseArray, Twist
 from aruco_msgs.msg import MarkerArray, Marker
-from srv_call_test import TurtlebotArmClient
+from box_sorter.srv_call_test import TurtlebotArmClient
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 import time
 import getkey
