@@ -31,6 +31,8 @@ setup(
             'job_publisher = box_sorter.GUI_uuuj:main',
             'yolo_info_subscriber = box_sorter.yolo_info_subscriber:main',
             'conveyor = box_sorter.conveyor:main',
+            'simple_manager_node = box_sorter.simple_manager_node:main',
+            'task_7_red_blue = box_sorter.task_7_red_blue:main',
             #'img_sub_GUI = box_sorter.img_sub_GUI:main',
         ],
     },

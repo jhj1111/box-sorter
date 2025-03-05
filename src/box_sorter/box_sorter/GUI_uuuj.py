@@ -64,11 +64,11 @@ class GUI(QMainWindow):
         
         self.subscription_status = self.node.create_subscription(
             String,
-            'conveyor/status',
+            '/conveyor/status',
             self.read_status,
             10)
         
-        self.conveyor_publisher_ = self.node.create_publisher(String, 'conveyor/command', 10)
+        self.conveyor_publisher_ = self.node.create_publisher(String, '/conveyor/command', 10)
 
     def image_callback(self, msg):
         print('listener_callback_rgb...')
