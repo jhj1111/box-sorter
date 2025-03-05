@@ -9,6 +9,7 @@ from box_sorter.srv_call_test import TurtlebotArmClient
 import time
 import ast
 
+import box_sorter.lib as lib
 
 # ANSI 색상 코드 정의
 RED = "\033[91m"
@@ -129,12 +130,14 @@ class IntegratedProcess(Node):
 
     def execute_forward_task(self, current_z_position):
         # 전진 작업: 30cm까지 전진 후 멈추고, 작업을 진행
+        #distance = 0.25
+        distance = 0.195
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing forward task...")
             # 목표 z축 위치를 30cm로 설정
             if current_z_position > 0.3:
                 self.publish_cmd_vel(0.05)
-            elif current_z_position > 0.25:
+            elif current_z_position > distance:
                 self.publish_cmd_vel(0.025)
             else:
                 self.publish_cmd_vel(0.0)
@@ -148,7 +151,7 @@ class IntegratedProcess(Node):
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing backward task...")
             # 목표 z축 위치를 30cm로 설정
-            if current_z_position < 0.98:
+            if current_z_position < 0.70:
                 self.publish_cmd_vel(-0.05)
             else:
                 self.publish_cmd_vel(0.0)
@@ -202,12 +205,13 @@ class IntegratedProcess(Node):
             arm_client.get_logger().info(f'Response: {response.response}')
             time.sleep(1)
 
-            pose_array = self.append_pose_init(0.137496 - self.yolo_y + 0.05,0.00 - self.yolo_x ,0.122354 )
+            yolo_robot_x, yolo_robot_y = lib.add_offset('offset_values.txt', self.yolo_x, self.yolo_y)
+            pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2 ,0.122354 )
 
             response = arm_client.send_request(0, "", pose_array)
             arm_client.get_logger().info(f'Response: {response.response}')
 
-            pose_array = self.append_pose_init(0.137496 - self.yolo_y + 0.05,0.00 - self.yolo_x ,0.087354  )
+            pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
 
             response = arm_client.send_request(0, "", pose_array)
             arm_client.get_logger().info(f'Response: {response.response}')     
@@ -263,7 +267,7 @@ class IntegratedProcess(Node):
                 arm_client.get_logger().info(f'Response: {response.response}')
                 time.sleep(1)
 
-                pose_array = self.append_pose_init(0.0103589 ,-0.2700000  ,0.205779  - self.yolo_y + 0.06 )
+                pose_array = self.append_pose_init(0.0103589 ,-0.2700000  ,0.205779  + self.yolo_y + 0.06 )
 
                 response = arm_client.send_request(3, "", pose_array)
                 arm_client.get_logger().info(f'Response: {response.response}')
@@ -271,7 +275,7 @@ class IntegratedProcess(Node):
                 response = arm_client.send_request(9, "")
                 arm_client.get_logger().info(f'Response: {response.response}')
 
-                pose_array = self.append_pose_init(0.0103589,-0.3000000   ,0.205779  - self.yolo_y + 0.06 )
+                pose_array = self.append_pose_init(0.0103589,-0.3000000   ,0.205779  + self.yolo_y + 0.06 )
 
                 response = arm_client.send_request(3, "", pose_array)
                 arm_client.get_logger().info(f'Response: {response.response}')     

@@ -66,7 +66,7 @@ class ArucoMarkerListener(Node):
                     self.publish_cmd_vel(0.10)
                 elif self.marker.pose.pose.position.z > 0.30:
                     self.publish_cmd_vel(0.06)
-                elif self.marker.pose.pose.position.z > 0.20 :
+                elif self.marker.pose.pose.position.z > 0.205 :
                     self.publish_cmd_vel(0.04)
                 else:
                     self.publish_cmd_vel(0.0)
