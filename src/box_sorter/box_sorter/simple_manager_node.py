@@ -5,7 +5,7 @@ from aruco_msgs.msg import MarkerArray, Marker
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist, Pose, PoseArray
 from turtlebot_cosmo_interface.srv import MoveitControl
-from srv_call_test import TurtlebotArmClient
+from box_sorter.srv_call_test import TurtlebotArmClient
 import time
 import ast
 
