@@ -1,7 +1,7 @@
 right_low_x_offset : -0.03
 right_low_y_offset : -0.02
 right_high_x_offset : -0.025
-right_high_y_offset : -0.015
+right_high_y_offset : 0.005
 left_low_x_offset : 0.005
 left_low_y_offset : 0.02
 left_high_x_offset : -0.015

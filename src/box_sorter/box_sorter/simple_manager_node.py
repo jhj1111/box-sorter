@@ -131,7 +131,7 @@ class IntegratedProcess(Node):
     def execute_forward_task(self, current_z_position):
         # 전진 작업: 30cm까지 전진 후 멈추고, 작업을 진행
         #distance = 0.25
-        distance = 0.195
+        distance = 0.19
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing forward task...")
             # 목표 z축 위치를 30cm로 설정
