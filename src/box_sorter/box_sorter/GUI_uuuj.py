@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QLabel, QTextBrowser, QLineEdit, QRadioButton, QButtonGroup, QGroupBox
 )
 
-import box_sorter.lib as lib
+import lib as lib
 
 # 아두이노 시리얼 포트 설정
 SERIAL_PORT = "/dev/ttyACM0"
@@ -35,10 +35,10 @@ class JobPublisher(Node):
         super().__init__('job_publisher')
         self.publisher_ = self.create_publisher(String, 'job_topic', 10)
 
-    def send_json_job(self, red_count, blue_count, goal):
+    def send_json_job(self, red, blue, goal):
         data = {
-            "Red": red_count,
-            "Blue": blue_count,
+            "Red": red,
+            "Blue": blue,
             "Goal": goal
         }
         job_data = json.dumps(data)
@@ -155,9 +155,9 @@ class GUI(QMainWindow):
         self.goal_group = QGroupBox("Select Goal")
         self.goal_layout = QHBoxLayout()
 
-        self.goal_1 = QRadioButton("Goal 1", self)
-        self.goal_2 = QRadioButton("Goal 2", self)
-        self.goal_3 = QRadioButton("Goal 3", self)
+        self.goal_1 = QRadioButton("1", self)
+        self.goal_2 = QRadioButton("2", self)
+        self.goal_3 = QRadioButton("3", self)
         self.goal_1.setChecked(True)
 
         self.goal_button_group = QButtonGroup(self)
@@ -221,11 +221,6 @@ class GUI(QMainWindow):
             #self.arduino.write(f"{distance_mm}\n".encode())
 
     def send_job(self):
-        """ Job 선택 """
-        selected_job = self.job_combo.currentText()
-        self.textBrowser.append(f"Job 전송: {selected_job}")
-
-    def send_job(self):
         """Red & Blue 개수와 Goal을 선택 후 한 번에 Send 실행"""
         selected_red_count = next(btn.text() for btn in self.red_count_group.buttons() if btn.isChecked())
         selected_blue_count = next(btn.text() for btn in self.blue_count_group.buttons() if btn.isChecked())
@@ -235,7 +230,7 @@ class GUI(QMainWindow):
         self.node.send_json_job(selected_red_count, selected_blue_count, selected_goal)
         
         # 결과 출력
-        self.textBrowser.append(f"Red: {selected_red_count}, Blue: {selected_blue_count}, {selected_goal}")
+        self.textBrowser.append(f"Red: {selected_red_count}, Blue: {selected_blue_count}, Goal: {selected_goal}")
 
     def image_show(self, image_np):
         image = self.cvimage_to_label(image_np)
