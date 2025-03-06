@@ -2,7 +2,7 @@ right_low_x_offset : 0.0024999999999999996
 right_low_y_offset : -0.030000000000000002
 right_high_x_offset : 0.005999999999999999
 right_high_y_offset : -0.024000000000000004
-left_low_x_offset : 0.010409999999999999
+left_low_x_offset : 0.010499999999999999
 left_low_y_offset : 0.005
 left_high_x_offset : 0.010000000000000005
 left_high_y_offset : 0.012

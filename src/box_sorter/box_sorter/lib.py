@@ -134,6 +134,7 @@ def get_yolo_cxcy_red_blue(result:list, goal_cls:str, classes:list = ['red', 'bl
         # 있으면 return
         if cls == goal_cls:
             return res[1], res[2]
+        print(f'cls = {cls},x = {res[1]}, y , {res[2]},')
     
     return None
 

@@ -128,23 +128,18 @@ class IntegratedProcess(Node):
 
                     if self.state == 'YOLO':
                         # get center red, blue
-                        if self.red:
-                            self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'red')
-                            self.red -= 1
-                        elif self.blue:
+                        if self.blue:
                             self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'blue')
                             self.blue -= 1
+                        elif self.red:
+                            self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'red')
+                            self.red -= 1
                         
                         if not self.yolofind:
                             self.yolofind = True
                             self.get_logger().info(f'red = {self.red}, blue = {self.blue}')
                             self.yolo_arm_controll()
 
-                            # # 컨베이어 동작
-                            # dis = 10.24 * 845
-                            # json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', dis])    #?->mm 변환
-                            # self.conveyor_publisher_.publish(json_data)    #?->mm 변환
-                            
                             #if self.count == 1:
                             if not (self.red + self.blue):
                                 self.home2_arm_controll()
@@ -174,7 +169,7 @@ class IntegratedProcess(Node):
     def execute_forward_task(self, current_z_position):
         # 전진 작업: 30cm까지 전진 후 멈추고, 작업을 진행
         #distance = 0.25
-        distance = 0.185
+        distance = 0.170
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing forward task...")
             # 목표 z축 위치를 30cm로 설정
@@ -194,7 +189,7 @@ class IntegratedProcess(Node):
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing backward task...")
             # 목표 z축 위치를 30cm로 설정
-            if current_z_position < 0.70:
+            if current_z_position < 0.75:
                 self.publish_cmd_vel(-0.05)
             else:
                 self.publish_cmd_vel(0.0)
@@ -249,16 +244,17 @@ class IntegratedProcess(Node):
             time.sleep(1)
 
             yolo_robot_x, yolo_robot_y = lib.add_offset('offset_values.txt', self.yolo_x, self.yolo_y)
-            pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2 ,0.122354 )
+            # pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2 ,0.112354 )
 
-            response = arm_client.send_request(0, "", pose_array)
-            arm_client.get_logger().info(f'Response: {response.response}')
+            # response = arm_client.send_request(0, "", pose_array)
+            # arm_client.get_logger().info(f'Response: {response.response}')
 
-            #pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
-            pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2, 0.087354)
+            # #pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
+            # pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2, 0.087354)
 
-            response = arm_client.send_request(0, "", pose_array)
-            arm_client.get_logger().info(f'Response: {response.response}')     
+            # response = arm_client.send_request(0, "", pose_array)
+            # arm_client.get_logger().info(f'Response: {response.response}')     
+            self.pik_obj(arm_client, yolo_robot_x, yolo_robot_y)
 
             response = arm_client.send_request(2, "close")
             arm_client.get_logger().info(f'Response: {response.response}')
@@ -279,23 +275,16 @@ class IntegratedProcess(Node):
             arm_client.get_logger().info(f'Response: {response.response}')
 
             print("throw ")
-
             
             response = arm_client.send_request(1, "conveyor_up")
             arm_client.get_logger().info(f'Response: {response.response}')
+
+            self.move_conveyor()
 
             response = arm_client.send_request(1, "camera_home")
             arm_client.get_logger().info(f'Response: {response.response}')    
 
             time.sleep(2)
-
-            self.move_conveyor()
-            # # 컨베이어 동작
-            # dis = 10.24 * 845
-            # json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', dis])    #?->mm 변환
-            # self.conveyor_publisher_.publish(json_data)    #?->mm 변환
-
-            # time.sleep(1)
 
             print("jobs_done")
 
@@ -303,6 +292,17 @@ class IntegratedProcess(Node):
             self.yolofind = False  # 작업 완료 후 초기화
             
             self.count += 1
+
+    def pik_obj(self, arm_client, yolo_robot_x, yolo_robot_y):
+        pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2 ,0.112354 )
+
+        response = arm_client.send_request(0, "", pose_array)
+        arm_client.get_logger().info(f'Response: {response.response}')
+
+        pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2, 0.087354)
+
+        response = arm_client.send_request(0, "", pose_array)
+        arm_client.get_logger().info(f'Response: {response.response}')   
         
     def purple_arm_control(self):
         if self.state == 'PURPLE':
@@ -320,7 +320,7 @@ class IntegratedProcess(Node):
                 arm_client.get_logger().info(f'Response: {response.response}')
                 time.sleep(1)
 
-                pose_array = self.append_pose_init(0.0103589 ,-0.2700000  ,0.205779  + self.yolo_y + 0.06 )
+                pose_array = self.append_pose_init(0.0103589 ,-0.2700000  ,0.185779  + self.yolo_y + 0.055 )
 
                 response = arm_client.send_request(3, "", pose_array)
                 arm_client.get_logger().info(f'Response: {response.response}')
@@ -328,7 +328,7 @@ class IntegratedProcess(Node):
                 response = arm_client.send_request(9, "")
                 arm_client.get_logger().info(f'Response: {response.response}')
 
-                pose_array = self.append_pose_init(0.0103589,-0.3300000   ,0.205779  + self.yolo_y + 0.06 )
+                pose_array = self.append_pose_init(0.0103589,-0.3300000   ,0.185779  + self.yolo_y + 0.055 )
 
                 response = arm_client.send_request(3, "", pose_array)
                 arm_client.get_logger().info(f'Response: {response.response}')     
@@ -371,7 +371,8 @@ class IntegratedProcess(Node):
         arm_client.get_logger().info(f'Response: {response.response}') 
         time.sleep(1)
         response = arm_client.send_request(2, "open")
-        arm_client.get_logger().info(f'Response: {response.response}')       
+        arm_client.get_logger().info(f'Response: {response.response}')    
+        self.home2_arm_controll()   
         self.state = "FINISH"
 
     def finish_task(self):
