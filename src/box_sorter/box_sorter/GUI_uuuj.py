@@ -37,9 +37,9 @@ class JobPublisher(Node):
 
     def send_json_job(self, red_count, blue_count, goal):
         data = {
-            "Red": red_count,
-            "Blue": blue_count,
-            "Goal": goal
+            "red": red_count,
+            "blue": blue_count,
+            "goal": goal
         }
         job_data = json.dumps(data)
         msg = String()
@@ -220,10 +220,10 @@ class GUI(QMainWindow):
             self.conveyor_publisher_.publish(json_data)
             #self.arduino.write(f"{distance_mm}\n".encode())
 
-    def send_job(self):
-        """ Job 선택 """
-        selected_job = self.job_combo.currentText()
-        self.textBrowser.append(f"Job 전송: {selected_job}")
+    # def send_job(self):
+    #     """ Job 선택 """
+    #     selected_job = self.job_combo.currentText()
+    #     self.textBrowser.append(f"Job 전송: {selected_job}")
 
     def send_job(self):
         """Red & Blue 개수와 Goal을 선택 후 한 번에 Send 실행"""

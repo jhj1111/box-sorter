@@ -58,7 +58,7 @@ class IntegratedProcess(Node):
         self.yolo_x = 0
         self.yolo_y = 0
         self.marker_id = None
-        self.state = 'START'  
+        self.state = None
         self.red = None
         self.blue = None
         self.goal = None
@@ -71,6 +71,8 @@ class IntegratedProcess(Node):
         self.twist = Twist()
 
     def job_callback(self, msg):
+        # goal 정보 수신 시 시작
+        self.state = 'START'
         # 이미 정보를 받았다면 무시
         if None not in [self.red, self.blue, self.goal]:
             self.get_logger().info(f'task received already : red = {self.red}, blue = {self.blue}, goal = {self.goal}')
