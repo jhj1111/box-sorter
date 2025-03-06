@@ -6,7 +6,7 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Twist, Pose, PoseArray
 from turtlebot_cosmo_interface.srv import MoveitControl
 from box_sorter.srv_call_test import TurtlebotArmClient
-import time
+import time, json
 import ast
 
 import box_sorter.lib as lib
@@ -39,6 +39,15 @@ class IntegratedProcess(Node):
             self.yolo_listener_callback,
             10)
         
+        self.job_subscriber = self.create_subscription(
+            String,
+            'job_topic',
+            self.job_callback,
+            10
+        )
+
+        #pub
+        self.conveyor_publisher_ = self.create_publisher(String, '/conveyor/control', 10)
         self.cmd_vel_publisher = self.create_publisher(Twist, '/cmd_vel', 2)
         
         # 상태 변수
@@ -50,6 +59,9 @@ class IntegratedProcess(Node):
         self.yolo_y = 0
         self.marker_id = None
         self.state = 'START'  
+        self.red = None
+        self.blue = None
+        self.goal = None
 
         self.count = 0
         self.aruco_pose = None  # Aruco marker의 pose 정보를 저장할 변수
@@ -58,6 +70,16 @@ class IntegratedProcess(Node):
         
         self.twist = Twist()
 
+    def job_callback(self, msg):
+        # 이미 정보를 받았다면 무시
+        if None not in [self.red, self.blue, self.goal]:
+            self.get_logger().info(f'task received already : red = {self.red}, blue = {self.blue}, goal = {self.goal}')
+
+        command_data = json.loads(msg.data)  # JSON 문자열을 파싱
+        json_data = json.dumps(command_data)  # 다시 JSON 문자열로 변환 (안전성 확보)
+        self.red = int(command_data.get('red', 0))
+        self.blue = int(command_data.get('blue', 0))
+        self.goal = int(command_data.get('goal', 0))
 
     def aruco_listener_callback(self, msg):
         if self.state not in ('ARUCO', 'BACKWARD', 'CHECK'):
@@ -79,7 +101,7 @@ class IntegratedProcess(Node):
             if self.state == 'CHECK':
                 marker_id = marker.id
                 x_position = marker.pose.pose.position.x
-                if marker_id == 3 and abs(x_position) <= 0.05:  # marker3을 가까이서 감지하면 정지
+                if marker_id == self.goal and abs(x_position) <= 0.05:  # marker3을 가까이서 감지하면 정지
                     print("find")
                     self.publish_cmd_vel(0.0)
                     self.final_task()
@@ -103,11 +125,21 @@ class IntegratedProcess(Node):
                     print("done")
 
                     if self.state == 'YOLO':
+                        # get center red, blue
+                        if self.red:
+                            self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'red')
+                            self.red -= 1
+                        elif self.blue:
+                            self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'blue')
+                            self.blue -= 1
+                        
                         if not self.yolofind:
                             self.yolofind = True
+                            self.get_logger().info(f'red = {self.red}, blue = {self.blue}')
                             self.yolo_arm_controll()
                             
-                            if self.count == 1:
+                            #if self.count == 1:
+                            if not (self.red + self.blue):
                                 self.home2_arm_controll()
                                 self.state = 'BACKWARD'
                     
@@ -211,7 +243,8 @@ class IntegratedProcess(Node):
             response = arm_client.send_request(0, "", pose_array)
             arm_client.get_logger().info(f'Response: {response.response}')
 
-            pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
+            #pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
+            pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2, 0.087354)
 
             response = arm_client.send_request(0, "", pose_array)
             arm_client.get_logger().info(f'Response: {response.response}')     
@@ -235,6 +268,10 @@ class IntegratedProcess(Node):
             arm_client.get_logger().info(f'Response: {response.response}')
 
             print("throw ")
+
+            # 컨베이어 동작
+            json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', 10.24 * 845])    #?->mm 변환
+            self.conveyor_publisher_.publish(json_data)    #?->mm 변환
             
             response = arm_client.send_request(1, "conveyor_up")
             arm_client.get_logger().info(f'Response: {response.response}')
@@ -275,7 +312,7 @@ class IntegratedProcess(Node):
                 response = arm_client.send_request(9, "")
                 arm_client.get_logger().info(f'Response: {response.response}')
 
-                pose_array = self.append_pose_init(0.0103589,-0.3000000   ,0.205779  + self.yolo_y + 0.06 )
+                pose_array = self.append_pose_init(0.0103589,-0.3300000   ,0.205779  + self.yolo_y + 0.06 )
 
                 response = arm_client.send_request(3, "", pose_array)
                 arm_client.get_logger().info(f'Response: {response.response}')     

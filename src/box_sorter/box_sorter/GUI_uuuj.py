@@ -68,7 +68,7 @@ class GUI(QMainWindow):
             self.read_status,
             10)
         
-        self.conveyor_publisher_ = self.node.create_publisher(String, '/conveyor/command', 10)
+        self.conveyor_publisher_ = self.node.create_publisher(String, '/conveyor/control', 10)
 
     def image_callback(self, msg):
         print('listener_callback_rgb...')
@@ -187,6 +187,7 @@ class GUI(QMainWindow):
 
     def read_status(self, msg):
         """아두이노에서 지속적으로 상태를 읽어 GUI에 출력"""
+        self.arduino = True
         response = msg.data
 
         if response != self.current_status:
@@ -202,7 +203,7 @@ class GUI(QMainWindow):
             distance_mm = float(distance_text)
             if self.arduino:
                 self.textBrowser.append(f"{distance_mm} 이동 요청")
-                json_data = lib.create_json_msg(['command', 'distance'], [command, distance_mm])
+                json_data = lib.create_json_msg(['control', 'distance.mm'], [command, 10.24 * distance_mm])    #?->mm 변환
                 self.conveyor_publisher_.publish(json_data)
             else:
                 self.textBrowser.append("Arduino 연결 없음")
@@ -215,7 +216,7 @@ class GUI(QMainWindow):
         distance_mm = 1
         if self.arduino:
             self.textBrowser.append("정지")
-            json_data = lib.create_json_msg(['command'], [command])
+            json_data = lib.create_json_msg(['control'], [command])
             self.conveyor_publisher_.publish(json_data)
             #self.arduino.write(f"{distance_mm}\n".encode())
 

@@ -1,0 +1,1 @@
+ros2 launch box_sorter_manipulator moveit_core.launch.py

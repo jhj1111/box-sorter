@@ -19,7 +19,7 @@ class ConveyorController(Node):
 
         # ROS 2 퍼블리셔 & 서브스크라이버 설정
         self.status_publisher = self.create_publisher(String, '/conveyor/status', 10)
-        self.command_subscriber = self.create_subscription(String, '/conveyor/command', self.send_command, 10)
+        self.command_subscriber = self.create_subscription(String, '/conveyor/control', self.send_command, 10)
 
         # 아두이노 연결 시도
         self.connect_arduino()
@@ -68,12 +68,14 @@ class ConveyorController(Node):
                         self.status_publisher.publish(status_msg)
                         self.get_logger().info(f"Publishing '/conveyor/status': {status_msg.data}")
 
-            time.sleep(0.1)  # CPU 점유율 방지
+            #time.sleep(0.1)  # CPU 점유율 방지
 
     def send_command(self, msg):
         """'/conveyor/command' 토픽을 구독하고, 받은 JSON 데이터를 아두이노에 전송"""
         try:
             command_data = json.loads(msg.data)  # JSON 문자열을 파싱
+            command_data['control'] = command_data.get('control', 'stop')
+            command_data['distance.mm'] = float(command_data.get('distance.mm', 1.0))
             json_data = json.dumps(command_data)  # 다시 JSON 문자열로 변환 (안전성 확보)
             if self.ser:
                 self.ser.write(f"{json_data}\n".encode())
