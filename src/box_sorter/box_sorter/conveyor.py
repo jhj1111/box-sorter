@@ -8,7 +8,7 @@ import threading
 
 class ConveyorController(Node):
     def __init__(self):
-        super().__init__('conveyor_controller')
+        super().__init__('conveyor_controller_node')
 
         # 아두이노 연결 설정
         self.arduino_port = "/dev/ttyACM0"  # 리눅스: "/dev/ttyUSB0", 윈도우: "COM3"

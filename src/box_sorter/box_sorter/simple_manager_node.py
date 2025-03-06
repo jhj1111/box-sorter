@@ -139,6 +139,11 @@ class IntegratedProcess(Node):
                             self.yolofind = True
                             self.get_logger().info(f'red = {self.red}, blue = {self.blue}')
                             self.yolo_arm_controll()
+
+                            # # 컨베이어 동작
+                            # dis = 10.24 * 845
+                            # json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', dis])    #?->mm 변환
+                            # self.conveyor_publisher_.publish(json_data)    #?->mm 변환
                             
                             #if self.count == 1:
                             if not (self.red + self.blue):
@@ -158,6 +163,10 @@ class IntegratedProcess(Node):
             except Exception as e:
                 self.get_logger().error(f"Error processing the data: {e}")
 
+    def move_conveyor(self, distance = 8500):
+        json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', float(distance)])    #?->mm 변환
+        self.conveyor_publisher_.publish(json_data)    #?->mm 변환
+
     def execute_aruco_task(self):
         self.state =  'ARUCO'
         
@@ -165,7 +174,7 @@ class IntegratedProcess(Node):
     def execute_forward_task(self, current_z_position):
         # 전진 작업: 30cm까지 전진 후 멈추고, 작업을 진행
         #distance = 0.25
-        distance = 0.19
+        distance = 0.185
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing forward task...")
             # 목표 z축 위치를 30cm로 설정
@@ -271,9 +280,6 @@ class IntegratedProcess(Node):
 
             print("throw ")
 
-            # 컨베이어 동작
-            json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', 10.24 * 845])    #?->mm 변환
-            self.conveyor_publisher_.publish(json_data)    #?->mm 변환
             
             response = arm_client.send_request(1, "conveyor_up")
             arm_client.get_logger().info(f'Response: {response.response}')
@@ -281,7 +287,15 @@ class IntegratedProcess(Node):
             response = arm_client.send_request(1, "camera_home")
             arm_client.get_logger().info(f'Response: {response.response}')    
 
-            time.sleep(3)
+            time.sleep(2)
+
+            self.move_conveyor()
+            # # 컨베이어 동작
+            # dis = 10.24 * 845
+            # json_data = lib.create_json_msg(['control', 'distance.mm'], ['go', dis])    #?->mm 변환
+            # self.conveyor_publisher_.publish(json_data)    #?->mm 변환
+
+            # time.sleep(1)
 
             print("jobs_done")
 

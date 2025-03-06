@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QLabel, QTextBrowser, QLineEdit, QRadioButton, QButtonGroup, QGroupBox
 )
 
-import lib as lib
+import box_sorter.lib as lib
 
 # 아두이노 시리얼 포트 설정
 SERIAL_PORT = "/dev/ttyACM0"
