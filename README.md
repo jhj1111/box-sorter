@@ -78,7 +78,9 @@ ros2 run box_sorter job_publisher
 ros2 run box_sorter conveyor
 ```
 - 컨베이어 벨트 상태를 퍼블리시함
-- **Publisher**: `/conveyor/control` (`std_msgs/String`)
+- **Publisher**: 
+  - `/conveyor/control` (`std_msgs/String`)
+  - `/conveyor/status` (`std_msgs/String`)
 - 아두이노와 연결하여 컨베이어 벨트를 제어함
 
 ---
