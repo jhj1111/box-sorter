@@ -1,55 +1,92 @@
-# Box Sorter ROS2 Package
+# 📦 Box Sorter Package
 
-## 개요
-`box_sorter` 패키지는 ROS2를 기반으로 동작하는 박스 분류 시스템입니다. 본 패키지는 박스를 인식하고, YOLO를 이용한 객체 검출을 수행하며, 컨베이어 벨트의 상태를 관리합니다.
-~~gpt가 헛소리한다~~
+## 📌 Requirements
 
-## 설치 및 실행 방법
+### 🔹 TurtleBot3 Manipulation Packages
+- `turtlebot3_manipulation_bringup`
+- `turtlebot3_manipulation_cartographer`
+- `turtlebot3_manipulation_description`
+- `turtlebot3_manipulation_hardware`
+- `turtlebot3_manipulation_moveit_config`
+- `turtlebot3_manipulation_navigation2`
+- `turtlebot3_manipulation_teleop`
 
-### 1. 패키지 빌드
+### 🔹 Additional Packages
+- `turtlebot_cosmo_interface`
+- `turtlebot_moveit`
+
+---
+
+## 🚀 실행 방법 (How to Run)
+
+### 🖥️ 1. TurtleBot3에서 실행 (SSH 접속 필요)
+
+#### 1.1 TurtleBot3 Bringup 실행
 ```bash
-colcon build --packages-select box_sorter
-source install/setup.bash
+ros2 launch turtlebot3_manipulation_bringup hardware.launch.py
+```
+- TurtleBot3의 하드웨어 제어 노드 실행
+
+#### 1.2 YOLO & ArUco Detector 실행
+```bash
+ros2 launch aruco_yolo aruco_yolo.launch.py
+```
+- **YOLO 노드**: Red, Blue, Purple 박스 클래스 및 중심 검출
+- **ArUco 노드**: ArUco 마커 종류 및 거리 데이터 측정
+
+---
+
+### 💻 2. PC에서 실행
+
+#### 2.1 경로 설정 노드 실행
+```bash
+ros2 launch box_sorter_manipulator moveit_core.launch.py
+```
+- MoveIt과 연동하여 Arm 및 Gripper의 경로를 설정
+
+#### 2.2 Arm Controller 실행
+```bash
+ros2 run turtlebot_moveit turtlebot_arm_controller
+```
+- Arm Manipulator의 조인트 이동 명령 실행
+
+#### 2.3 Manager 노드 실행
+```bash
+ros2 run box_sorter simple_manager_node
+```
+- 상태(status)에 따른 실행 방법 정의
+
+#### 2.4 GUI & Conveyor 노드 실행
+```bash
+ros2 launch box_sorter GUI_conveyor.launch.py
 ```
 
-### 2. 노드 실행
-
-#### 2.1. Job Publisher (GUI 실행)
+##### ✅ GUI 노드 실행
 ```bash
 ros2 run box_sorter job_publisher
 ```
-- GUI를 실행하여 작업을 관리합니다.
+- 이동 명령 실행 및 상태 출력
+- **Publisher**:
+  - `/job_topic` (`std_msgs/String`)
+  - `/conveyor/control` (`std_msgs/String`)
+- **Subscriber**:
+  - `/yolo/compressed` (`sensor_msgs/CompressedImage`)
+  - `/conveyor/status` (`std_msgs/String`)
 
-#### 2.2. Image Publisher (카메라 이미지 전송)
-```bash
-ros2 run box_sorter img_publisher
-```
-- 카메라에서 촬영한 이미지를 퍼블리시합니다.
-- 토픽: `/image_raw/compressed` (`sensor_msgs/CompressedImage`)
-
-#### 2.3. YOLO Publisher (YOLO 객체 검출)
-```bash
-ros2 run box_sorter yolo_publisher
-```
-- YOLO를 이용하여 박스를 검출하고 결과를 퍼블리시합니다.
-- 퍼블리시 토픽:
-  - `/yolo/compressed` (`sensor_msgs/CompressedImage`) : YOLO 처리된 이미지
-  - `/yolo/detected_info` (`std_msgs/String`) : YOLO 검출 정보
-
-#### 2.4. Conveyor (컨베이어 벨트 상태 관리)
+##### ✅ Conveyor 노드 실행
 ```bash
 ros2 run box_sorter conveyor
 ```
-- 컨베이어 벨트 상태를 퍼블리시합니다.
-- 퍼블리시 토픽: `/conveyor/status` (`std_msgs/String`)
-- 아두이노와 연결하여 컨베이어 벨트를 제어합니다.
+- 컨베이어 벨트 상태를 퍼블리시함
+- **Publisher**: `/conveyor/control` (`std_msgs/String`)
+- 아두이노와 연결하여 컨베이어 벨트를 제어함
 
-## 의존성 패키지
-- ROS2 Humble
-- OpenCV
-- YOLOv5 또는 YOLOv8
-- Arduino 통신을 위한 `rosserial` 또는 `ros2serial` (필요 시)
+---
 
-## 라이선스
-MIT License
+## 📜 추가 정보 (Additional Information)
+- ROS 2 Humble 기반에서 테스트됨
+- ArUco 및 YOLO를 활용한 물체 인식 기능 포함
+- MoveIt을 활용한 Arm Manipulator 제어
 
+📩 문의 사항이 있으면 개발팀에 연락하세요! 🚀
+*~쓸데없는거 넣지 마라~*

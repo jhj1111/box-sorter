@@ -59,16 +59,61 @@ class IntegratedProcess(Node):
         self.yolo_y = 0
         self.marker_id = None
         self.state = None
+        self.total = 0
         self.red = None
         self.blue = None
         self.goal = None
 
+        self.right_low_x_offset = None
+        self.right_low_y_offset = None
+        self.right_high_x_offset = None
+        self.right_high_y_offset = None
+        self.left_low_x_offset = None
+        self.left_low_y_offset = None
+        self.left_high_x_offset = None
+        self.left_high_y_offset = None
+
+        self.right_low_x_offset, self.right_low_y_offset, self.right_high_x_offset, self.right_high_y_offset, \
+        self.left_low_x_offset, self.left_low_y_offset, self.left_high_x_offset, self.left_high_y_offset = lib.get_offset_params()
+    
         self.count = 0
         self.aruco_pose = None  # Aruco marker의 pose 정보를 저장할 변수
 
         self.create_timer(1.0, self.run_tasks)
         
         self.twist = Twist()
+    
+    def add_offset(self,yolo_x=0, yolo_y=0):
+
+        if not yolo_x and not yolo_y:
+            print("0,0")
+
+        if yolo_x > 0 and yolo_y > 0:   # right low
+            yolo_robot_y = yolo_x + self.right_low_y_offset       # hight  += 아래   -= 위
+            yolo_robot_x = yolo_y + self.right_low_x_offset       # width  += 오른쪽 -= 왼쪽
+            print(f'right low  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
+            # x : 0.03522528820800782] y : 0.0352 2528820800782]
+
+        elif yolo_x > 0 and yolo_y < 0:  # right high
+            yolo_robot_y = yolo_x + self.right_high_y_offset       # hight  += 아래   -= 위
+            yolo_robot_x = yolo_y + self.right_high_x_offset       # width  += 오른쪽 -= 왼쪽
+            #print("right high")
+            print(f'right high  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
+
+        elif yolo_x < 0 and yolo_y > 0:  # left low
+            yolo_robot_y = yolo_x + self.left_low_y_offset       # hight  += 아래   -= 위
+            yolo_robot_x = yolo_y + self.left_low_x_offset       # width  += 오른쪽 -= 왼쪽
+            #print("left low")
+            print(f'left low  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
+
+        elif yolo_x < 0 and yolo_y < 0:  # left high
+            yolo_robot_y = yolo_x + self.left_high_y_offset       # hight  += 아래   -= 위
+            yolo_robot_x = yolo_y + self.left_high_x_offset       # width  += 오른쪽 -= 왼쪽
+            #print("left high")
+            print(f'left high  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
+
+        return yolo_robot_x, yolo_robot_y
+
 
     def job_callback(self, msg):
         # goal 정보 수신 시 시작
@@ -82,6 +127,7 @@ class IntegratedProcess(Node):
         self.red = int(command_data.get('red', 0))
         self.blue = int(command_data.get('blue', 0))
         self.goal = int(command_data.get('goal', 0))
+        self.total = self.red + self.blue
 
     def aruco_listener_callback(self, msg):
         if self.state not in ('ARUCO', 'BACKWARD', 'CHECK'):
@@ -120,20 +166,27 @@ class IntegratedProcess(Node):
             try:
                 data_list = ast.literal_eval(data)
                 if len(data_list) > 0:
-                    self.yolo_x = data_list[0][1]
-                    self.yolo_y = data_list[0][2]
+                    # self.yolo_x = data_list[0][1]
+                    # self.yolo_y = data_list[0][2]
                     
-                    print(f"Detected coordinates: {self.yolo_x}, {self.yolo_y}")
-                    print("done")
+                    # print(f"Detected coordinates: {self.yolo_x}, {self.yolo_y}")
+                    # print("done")
+            
 
                     if self.state == 'YOLO':
+                        ret = False
+                        #while not ret:
                         # get center red, blue
-                        if self.blue:
-                            self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'blue')
+                        if self.blue != 0:
+                            ret, self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'blue')
                             self.blue -= 1
-                        elif self.red:
-                            self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'red')
+                        elif self.red != 0:
+                            ret, self.yolo_x, self.yolo_y = lib.get_yolo_cxcy_red_blue(data_list,'red')
                             self.red -= 1
+
+                        if self.yolo_x is not None and self.yolo_y is not None:
+                            time.sleep(1.0)
+                            self.yolofind = False
                         
                         if not self.yolofind:
                             self.yolofind = True
@@ -141,11 +194,14 @@ class IntegratedProcess(Node):
                             self.yolo_arm_controll()
 
                             #if self.count == 1:
-                            if not (self.red + self.blue):
+                            if self.red == 0 and self.blue == 0:
                                 self.home2_arm_controll()
                                 self.state = 'BACKWARD'
                     
                     elif self.state == 'PURPLE':
+                        self.yolo_x = data_list[0][1]
+                        self.yolo_y = data_list[0][2]
+
                         if not self.yolofind and abs(self.yolo_x) < 0.01:
                             self.publish_cmd_vel(0.0)
                             self.yolofind = True
@@ -169,7 +225,7 @@ class IntegratedProcess(Node):
     def execute_forward_task(self, current_z_position):
         # 전진 작업: 30cm까지 전진 후 멈추고, 작업을 진행
         #distance = 0.25
-        distance = 0.170
+        distance = 0.175
         if self.aruco_marker_found and self.aruco_pose:
             self.get_logger().info("Executing forward task...")
             # 목표 z축 위치를 30cm로 설정
@@ -243,21 +299,24 @@ class IntegratedProcess(Node):
             arm_client.get_logger().info(f'Response: {response.response}')
             time.sleep(1)
 
-            yolo_robot_x, yolo_robot_y = lib.add_offset('offset_values.txt', self.yolo_x, self.yolo_y)
-            # pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2 ,0.112354 )
+            yolo_robot_x, yolo_robot_y = self.add_offset(self.yolo_x, self.yolo_y)
+            pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.0 - yolo_robot_y * 1.2, 0.122354 )
 
-            # response = arm_client.send_request(0, "", pose_array)
-            # arm_client.get_logger().info(f'Response: {response.response}')
+            response = arm_client.send_request(0, "", pose_array)
+            arm_client.get_logger().info(f'Response: {response.response}')
+            time.sleep(1.0)
 
-            # #pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
-            # pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.00 - yolo_robot_y * 1.2, 0.087354)
+            #pose_array = self.append_pose_init(0.137496 - yolo_robot_x + 0.05,0.00 - yolo_robot_y ,0.087354  )
+            pose_array = self.append_pose_init(0.14 - yolo_robot_x + 0.055 + 0.01, 0.0 - yolo_robot_y * 1.2, 0.087354  )
 
-            # response = arm_client.send_request(0, "", pose_array)
-            # arm_client.get_logger().info(f'Response: {response.response}')     
-            self.pik_obj(arm_client, yolo_robot_x, yolo_robot_y)
+            response = arm_client.send_request(0, "", pose_array)
+            arm_client.get_logger().info(f'Response: {response.response}')     
+            #self.pik_obj(arm_client, yolo_robot_x, yolo_robot_y)
+            time.sleep(1.0)
 
             response = arm_client.send_request(2, "close")
             arm_client.get_logger().info(f'Response: {response.response}')
+            time.sleep(1.0)
    
             response = arm_client.send_request(1, "home2")
             arm_client.get_logger().info(f'Response: {response.response}')
@@ -284,7 +343,7 @@ class IntegratedProcess(Node):
             response = arm_client.send_request(1, "camera_home")
             arm_client.get_logger().info(f'Response: {response.response}')    
 
-            time.sleep(2)
+            time.sleep(5)
 
             print("jobs_done")
 

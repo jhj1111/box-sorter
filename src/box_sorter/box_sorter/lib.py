@@ -43,10 +43,8 @@ def create_json_msg(command:list, data:list) -> String:
 
     return json_msg
 
-def add_offset(file_path = 'offset_values.txt', yolo_x=0, yolo_y=0):
-    right_low_x_offset, right_low_y_offset, right_high_x_offset, right_high_y_offset, \
-    left_low_x_offset, left_low_y_offset, left_high_x_offset, left_high_y_offset = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-    
+def get_offset_params(file_path = 'offset_values.txt'):
+    offsets = []
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
             for line in file:
@@ -75,43 +73,9 @@ def add_offset(file_path = 'offset_values.txt', yolo_x=0, yolo_y=0):
                             left_high_y_offset = value
                     except ValueError:
                         pass
-    else:
-        # 파일이 없으면 새로운 파일을 생성하고 값을 저장
-        with open(file_path, "w") as file:
-            file.write(f"right_low_x_offset : {right_low_x_offset}\n")
-            file.write(f"right_low_y_offset : {right_low_y_offset}\n")
-            file.write(f"right_high_x_offset : {right_high_x_offset}\n")
-            file.write(f"right_high_y_offset : {right_high_y_offset}\n")
-            file.write(f"left_low_x_offset : {left_low_x_offset}\n")
-            file.write(f"left_low_y_offset : {left_low_y_offset}\n")
-            file.write(f"left_high_x_offset : {left_high_x_offset}\n")
-            file.write(f"left_high_y_offset : {left_high_y_offset}\n")
-    ################################################################################################
-    if yolo_x > 0 and yolo_y > 0:   # right low
-        yolo_robot_y = yolo_x + right_low_y_offset       # hight  += 아래   -= 위
-        yolo_robot_x = yolo_y + right_low_x_offset       # width  += 오른쪽 -= 왼쪽
-        print(f'right low  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
-        # x : 0.03522528820800782] y : 0.0352 2528820800782]
+        return right_low_x_offset, right_low_y_offset, right_high_x_offset, right_high_y_offset, left_low_x_offset, left_low_y_offset, left_high_x_offset, left_high_y_offset
 
-    elif yolo_x > 0 and yolo_y < 0:  # right high
-        yolo_robot_y = yolo_x + right_high_y_offset       # hight  += 아래   -= 위
-        yolo_robot_x = yolo_y + right_high_x_offset       # width  += 오른쪽 -= 왼쪽
-        #print("right high")
-        print(f'right high  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
 
-    elif yolo_x < 0 and yolo_y > 0:  # left low
-        yolo_robot_y = yolo_x + left_low_y_offset       # hight  += 아래   -= 위
-        yolo_robot_x = yolo_y + left_low_x_offset       # width  += 오른쪽 -= 왼쪽
-        #print("left low")
-        print(f'left low  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
-
-    elif yolo_x < 0 and yolo_y < 0:  # left high
-        yolo_robot_y = yolo_x + left_high_y_offset       # hight  += 아래   -= 위
-        yolo_robot_x = yolo_y + left_high_x_offset       # width  += 오른쪽 -= 왼쪽
-        #print("left high")
-        print(f'left high  :  yolo_robot_x [{yolo_robot_x}] yolo_robot_y[{yolo_robot_y}]')
-
-    return yolo_robot_x, yolo_robot_y
 
 def count_yolo_classes(result:list, classes) -> dict:
     '''
@@ -129,11 +93,13 @@ def get_yolo_cxcy_red_blue(result:list, goal_cls:str, classes:list = ['red', 'bl
     result : yolo_info data
     goal_cls : red, blue
     '''
+    ret = False
     for res in result:
         cls = classes[res[0]]
         # 있으면 return
         if cls == goal_cls:
-            return res[1], res[2]
+            ret = True
+            return ret, res[1], res[2]
         print(f'cls = {cls},x = {res[1]}, y , {res[2]},')
     
     return None
