@@ -44,6 +44,14 @@ ros2 run box_sorter conveyor
 - 퍼블리시 토픽: `/conveyor/status` (`std_msgs/String`)
 - 아두이노와 연결하여 컨베이어 벨트를 제어합니다.
 
+## 로봇 실행
+```bash
+ros2 launch turtlebot3_manipulation_bringup hardware.launch.py
+```
+```bash
+ros2 launch aruco_yolo aruco_yolo.launch.py
+```
+
 ## 의존성 패키지
 - ROS2 Humble
 - OpenCV
